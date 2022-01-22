@@ -241,6 +241,69 @@ class RTiny_GhostBottle_all_G2(nn.Module):
         return out0, out1
 
 
+class RTiny_SqueezeGhost(nn.Module):
+
+    def __init__(self, out_chs):
+        super(RTiny_SqueezeGhost, self).__init__()
+        # attention_block = [se_block, cbam_block, eca_block]
+        self.tiny = True
+        self.backbone = DarkNet53tiny_SqueezeGhost()
+        self.neck = Neck_tiny(None)
+        self.head = Head_tiny(out_chs)
+
+    def forward(self, x):
+        # feat1的shape为26,26,256
+        # feat2的shape为13,13,512
+        feat1, feat2 = self.backbone(x)
+        feat1, feat2 = self.neck(feat1, feat2)
+        out0, out1 = self.head(feat1, feat2)
+        # out0: batchsize*((6+4)*3*6)*26*26
+        # out0: batchsize*((6+4)*3*6)*13*13
+        return out0, out1
+
+
+class RTiny_SqueezeGhostPlus(nn.Module):
+
+    def __init__(self, out_chs):
+        super(RTiny_SqueezeGhostPlus, self).__init__()
+        # attention_block = [se_block, cbam_block, eca_block]
+        self.tiny = True
+        self.backbone = DarkNet53tiny_SqueezeGhost2()
+        self.neck = Neck_tiny(None)
+        self.head = Head_tiny(out_chs)
+
+    def forward(self, x):
+        # feat1的shape为26,26,256
+        # feat2的shape为13,13,512
+        feat1, feat2 = self.backbone(x)
+        feat1, feat2 = self.neck(feat1, feat2)
+        out0, out1 = self.head(feat1, feat2)
+        # out0: batchsize*((6+4)*3*6)*26*26
+        # out0: batchsize*((6+4)*3*6)*13*13
+        return out0, out1
+
+
+class RTiny_Mobile(nn.Module):
+
+    def __init__(self, out_chs):
+        super(RTiny_Mobile, self).__init__()
+        # attention_block = [se_block, cbam_block, eca_block]
+        self.tiny = True
+        self.backbone = DarkNet53tiny_Mobile()
+        self.neck = Neck_tiny(None)
+        self.head = Head_tiny(out_chs)
+
+    def forward(self, x):
+        # feat1的shape为26,26,256
+        # feat2的shape为13,13,512
+        feat1, feat2 = self.backbone(x)
+        feat1, feat2 = self.neck(feat1, feat2)
+        out0, out1 = self.head(feat1, feat2)
+        # out0: batchsize*((6+4)*3*6)*26*26
+        # out0: batchsize*((6+4)*3*6)*13*13
+        return out0, out1
+
+
 class RTiny_GhostBottle_all_G3(nn.Module):
     def __init__(self, out_chs):
         super(RTiny_GhostBottle_all_G3, self).__init__()
@@ -416,6 +479,25 @@ class RTiny_Ghost(nn.Module):
         return out0, out1
 
 
+class RTiny_Ghostplus(nn.Module):
+    def __init__(self, out_chs):
+        super(RTiny_Ghostplus, self).__init__()
+        # attention_block = [se_block, cbam_block, eca_block]
+        self.tiny = True
+        self.backbone = DarkNet53tiny_Ghost2()
+        self.neck = Neck_tiny(None)
+        self.head = Head_tiny(out_chs)
+
+    def forward(self, x):
+        # feat1的shape为26,26,256
+        # feat2的shape为13,13,512
+        feat1, feat2 = self.backbone(x)
+        feat1, feat2 = self.neck(feat1, feat2)
+        out0, out1 = self.head(feat1, feat2)
+        # out0: batchsize*((6+4)*3*6)*26*26
+        # out0: batchsize*((6+4)*3*6)*13*13
+        return out0, out1
+
 
 class RTiny_Ghost_Atte(nn.Module):
     def __init__(self, out_chs):
@@ -569,7 +651,7 @@ class YOLO(nn.Module):
         out_chs = (5 + 1 + ncls) * 3 * 6
         radian = np.pi / 180
         # angles=[-pi / 3, -pi / 6, 0, pi / 6, pi / 3, pi / 2]
-        
+
         # 604
         # anchors_list = [[[12, 16], [19, 36], [40, 28]],
         #                 [[36, 75], [76, 55], [72, 146]],
@@ -592,7 +674,7 @@ class YOLO(nn.Module):
         self.yolo3 = YoloLayer(num_classes=ncls, anchors=anchors_list[2],
                                angles=[-radian * 60, -radian * 30, 0,
                                        radian * 30, radian * 60, radian * 90],
-                               stride=32, scale_x_y=1.05, ignore_thresh=0.6)      
+                               stride=32, scale_x_y=1.05, ignore_thresh=0.6)
         self.metrics={}
 
     def forward(self, x, target=None):
@@ -603,7 +685,7 @@ class YOLO(nn.Module):
         y1, loss1 = self.yolo1(feat1, target) #grid = 76
         y2, loss2 = self.yolo2(feat2, target)  # grid = 38
         y3, loss3 = self.yolo3(feat3, target)  # grid = 19
-        
+
         if target!=None:
             self.metrics={
                 "loss": self.yolo1.metrics["loss"]+self.yolo2.metrics["loss"]+self.yolo3.metrics["loss"],
@@ -716,8 +798,3 @@ class YOLO2_ghost(nn.Module):
             "precision": self.yolo1.metrics["precision"]+self.yolo2.metrics["precision"]+self.yolo3.metrics["precision"],
         }
         return torch.cat([y1, y2, y3], 1), (loss1 + loss2 + loss3)
-
-
-
-
-

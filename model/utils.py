@@ -78,7 +78,7 @@ def fit_one_epoch(model_train, model, yolo_layer, loss_history, optimizer, epoch
             #----------------------#
             for l in range(len(outputs)):
                 loss_item, loss_loc, loss_conf, loss_cls, total_anchors = yolo_layer(l, outputs[l], targets)
-                
+
                 loss_value_all += loss_item
 
                 loss_loc_all+=loss_loc
@@ -134,7 +134,7 @@ def fit_one_epoch(model_train, model, yolo_layer, loss_history, optimizer, epoch
                         l, outputs[l], targets)
                     loss_value_all += loss_item
                     num_anchors_all += total_anchors
-                
+
                 loss_history.append_valloss(loss_value_all.item())
 
             val_loss += loss_value_all.item()
@@ -146,9 +146,9 @@ def fit_one_epoch(model_train, model, yolo_layer, loss_history, optimizer, epoch
     print('Epoch:' + str(epoch+1) + '/' + str(Epoch))
     print('Total Loss: %.3f || Val Loss: %.3f ' %
           (loss / epoch_step, val_loss / epoch_step_val))
-
-    torch.save(model.state_dict(), '%s/ep%03d-loss%.3f-val_loss%.3f.pth' %
-               (weights_folder, epoch + 1, loss / epoch_step, val_loss / epoch_step_val))
+    if epoch+1==Epoch:
+        torch.save(model.state_dict(), '%s/ep%03d-loss%.3f-val_loss%.3f.pth' %
+                (weights_folder, epoch + 1, loss / epoch_step, val_loss / epoch_step_val))
 
 class LossHistory():
     def __init__(self, log_dir):
@@ -239,7 +239,7 @@ class Mish(nn.Module):
 
     def forward(self, x):
         return x * (torch.tanh(F.softplus(x)))
-        
+
 
 
 class Conv(nn.Module):
@@ -445,7 +445,6 @@ class SqueezeExcite(nn.Module):
         x = x * self.gate_fn(x_se)
         return x
 
-
 class GhostConv(nn.Module):
     def __init__(self, inp, oup, kernel_size=1, ratio=2, dw_size=3, stride=1, relu=True):
         super(GhostConv, self).__init__()
@@ -457,13 +456,13 @@ class GhostConv(nn.Module):
             nn.Conv2d(inp, init_channels, kernel_size,
                       stride, kernel_size//2, bias=False),
             nn.BatchNorm2d(init_channels),
-            nn.LeakyReLU(inplace=True) if relu else nn.Sequential(),
+            nn.LeakyReLU(0.1, inplace=True) if relu else nn.Sequential(),
         )
         self.cheap_operation = nn.Sequential(
             nn.Conv2d(init_channels, new_channels, dw_size, 1,
                       dw_size//2, groups=init_channels, bias=False),
             nn.BatchNorm2d(new_channels),
-            nn.LeakyReLU(inplace=True) if relu else nn.Sequential(),
+            nn.LeakyReLU(0.1, inplace=True) if relu else nn.Sequential(),
         )
     def forward(self, x):
         x1 = self.primary_conv(x)
@@ -471,3 +470,119 @@ class GhostConv(nn.Module):
         out = torch.cat([x1, x2], dim=1)
         return out[:, :self.oup, :, :]
 
+
+class SqGhostConv(nn.Module):
+    def __init__(self, inp, oup, kernel_size=1, ratio=2, dw_size=3, stride=1, relu=True):
+        super(SqGhostConv, self).__init__()
+        self.oup = oup
+        init_channels = math.ceil(oup / ratio)
+        new_channels = init_channels*(ratio-1)
+
+        self.squeeze_conv = nn.Sequential(
+            nn.Conv2d(inp,init_channels,1,1,0,bias=False),
+            nn.BatchNorm2d(init_channels),
+            nn.LeakyReLU(0.1, inplace=True) if relu else nn.Sequential())
+
+        self.dw_conv=nn.Sequential(
+            nn.Conv2d(init_channels,init_channels,kernel_size,stride,padding=kernel_size//2,groups=init_channels,bias=False),
+            nn.BatchNorm2d(init_channels),
+            nn.LeakyReLU(0.1, inplace=True) if relu else nn.Sequential()
+        )
+        self.point_conv = nn.Sequential(
+            nn.Conv2d(init_channels, init_channels, 1, 1, 0, bias=False),
+            nn.BatchNorm2d(init_channels),
+            nn.LeakyReLU(0.1, inplace=True) if relu else nn.Sequential())
+
+        self.cheap_operation = nn.Sequential(
+            nn.Conv2d(init_channels, new_channels, dw_size, 1,
+                      dw_size//2, groups=init_channels, bias=False),
+            nn.BatchNorm2d(new_channels),
+            nn.LeakyReLU(0.1, inplace=True) if relu else nn.Sequential(),
+        )
+    def forward(self, x):
+        x1 = self.squeeze_conv(x)
+        x1 = self.dw_conv(x1)
+        x1 = self.point_conv(x1)
+        x2 = self.cheap_operation(x1)
+        out = torch.cat([x1, x2], dim=1)
+        return out[:, :self.oup, :, :]
+
+
+class SqGhostConv2(nn.Module):
+
+    def __init__(self,
+                 inp,
+                 oup,
+                 kernel_size=1,
+                 ratio=2,
+                 dw_size=3,
+                 stride=1,
+                 relu=True):
+        super(SqGhostConv2, self).__init__()
+        self.oup = oup
+        init_channels = math.ceil(oup / ratio)
+        new_channels = init_channels * (ratio - 1)
+
+        self.squeeze_conv = nn.Sequential(
+            nn.Conv2d(inp, init_channels, 1, 1, 0, bias=False),
+            nn.BatchNorm2d(init_channels),
+            nn.LeakyReLU(0.1, inplace=True) if relu else nn.Sequential())
+
+        self.dw_conv = nn.Sequential(
+            nn.Conv2d(init_channels,
+                      init_channels,
+                      kernel_size,
+                      stride,
+                      padding=kernel_size // 2,
+                      groups=init_channels,
+                      bias=False), nn.BatchNorm2d(init_channels),
+            nn.LeakyReLU(0.1, inplace=True) if relu else nn.Sequential())
+
+
+        self.cheap_operation = nn.Sequential(
+            nn.Conv2d(init_channels,
+                      new_channels,
+                      dw_size,
+                      1,
+                      dw_size // 2,
+                      groups=init_channels,
+                      bias=False),
+            nn.BatchNorm2d(new_channels),
+            nn.LeakyReLU(0.1, inplace=True) if relu else nn.Sequential(),
+        )
+
+    def forward(self, x):
+        x1 = self.squeeze_conv(x)
+        x1 = self.dw_conv(x1)
+        x2 = self.cheap_operation(x1)
+        out = torch.cat([x1, x2], dim=1)
+        return out[:, :self.oup, :, :]
+
+
+class MobileBlock(nn.Module):
+    '''Depthwise conv + Pointwise conv'''
+
+    def __init__(self, in_planes, out_planes, kernel_size, stride=1):
+        super(MobileBlock, self).__init__()
+        self.conv1 = nn.Conv2d(in_planes,
+                               in_planes,
+                               kernel_size,
+                               stride=stride,
+                               padding=1,
+                               groups=in_planes,
+                               bias=False)
+        self.bn1 = nn.BatchNorm2d(in_planes)
+        self.relu1 = nn.LeakyReLU(0.1,inplace=True)
+        self.conv2 = nn.Conv2d(in_planes,
+                               out_planes,
+                               kernel_size=1,
+                               stride=1,
+                               padding=0,
+                               bias=False)
+        self.bn2 = nn.BatchNorm2d(out_planes)
+        self.relu2 = nn.LeakyReLU(0.1,inplace=True)
+
+    def forward(self, x):
+        out = self.relu1(self.bn1(self.conv1(x)))
+        out = self.relu2(self.bn2(self.conv2(out)))
+        return out

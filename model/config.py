@@ -16,11 +16,16 @@ class config():
         # self.model = RTiny_Atte(outchs)
         # self.model = RTiny_Ghost_Atte(outchs)
         # self.model = RTiny_Ghost(outchs)
+        # self.model = RTiny_Ghostplus(outchs)
+        # self.model  =RTiny_SqueezeGhost(outchs)
+        self.model = RTiny_SqueezeGhostPlus(outchs)
+        # self.model = RTiny_Mobile(outchs)
         # self.model = RTiny_GhostBottle(outchs)
         # self.model = RTiny_GhostBottle_all(outchs)
         # self.model = RTiny_GhostBottle_all_G_FeaCASA(outchs)
         # self.model = RTiny_GhostBottle_all_G(outchs)
-        self.model = RTiny_GhostBottle_all_G2(outchs)
+        # self.model = RTiny_GhostBottle_all_G2(outchs)
+
         # self.model = RTiny_GhostBottle_all_G3(outchs)
         # self.model = RTiny_GhostBottle_G2_trip(outchs)
         # self.model = RTiny_GhostALLBottle(outchs)
@@ -49,7 +54,7 @@ class config():
         self.trainbatchsize = 64
         self.valbatchsize=16
         self.testbatchsize=1
-        
+
         self.conf_thres=0.7
         self.nms_thres=0.2
         self.iou_thres=[0.6, 0.4]
@@ -73,7 +78,7 @@ class config():
         self.weights_folder = 'weights/'+self.model._get_name()+time_str
         self.class_path = 'data/coco.names'
         self.trainedmodel=''
-        self.weights_path = 'weights/RTiny_GhostBottle_all_G212-27_10-19/ep060-loss1.484-val_loss0.539.pth'
+        self.weights_path = 'weights/RTiny_SqueezeGhostPlus01-21_10-23/ep060-loss1.247-val_loss0.819.pth'
         self.CUDA = True
         self.GPU = '1,2,3'
 

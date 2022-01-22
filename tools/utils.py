@@ -347,9 +347,8 @@ def new_get_batch_statistics(outputs, targets, paths, iou_threshold):
                     recdata.append([px, py, pw, ph, pa, gx, gy,
                                    gw, gh, ga, iou, preclass, gtclass])
 
-                    da=torch.abs(pa-ga)/np.pi*180
-                    if da > 90:
-                        da = 90-da
+                    da=(torch.abs(pa-ga)/np.pi*180)%90
+
                     # 记录预测过大的图片路径 
                     if da>30:
                         rec_hardsample.append([paths[sample_i],da])
@@ -402,6 +401,9 @@ def datastatistical(data, AP, ncls, classname, APpath, Catchpath):
           n30_60 += 1
       else:
           n60_90 += 1
+
+    
+
 
     with open(APpath, 'a+') as f:
         f.writelines('%d\n'%(AP))

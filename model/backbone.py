@@ -10,7 +10,7 @@ class DarkNet53tiny_DCSP(nn.Module):
         self.conv2 = BasicConv(32, 64, kernel_size=3, stride=2)
         # 13,13,512 -> 13,13,512
         self.conv3 = BasicConv(512, 512, kernel_size=3)
-        
+
 
         # 104,104,64 -> 52,52,128
         self.resblock_body1 = tinyResblock_DCS(64, 64)
@@ -79,7 +79,7 @@ class tinyResblock_DCS(nn.Module):
         x = self.conv4(x)
         feat = x
         x = torch.cat([route, x], dim=1)
-        
+
         # 利用最大池化进行高和宽的压缩
         x = self.maxpool(x)
         return x, feat
@@ -272,7 +272,7 @@ class DarkNet53tiny_GhostbottleTrip(nn.Module):
         x = self.conv2(x)
 
         # 104,104,64 -> 52,52,128
-        x, _ = self.resblock_body1(x)      
+        x, _ = self.resblock_body1(x)
         # 52,52,128 -> 26,26,256
         x, _ = self.resblock_body2(x)
         x = self.atteblock1(x)
@@ -470,6 +470,148 @@ class DarkNet53tiny_Ghostbottle_all_G2(nn.Module):
         return feat1, feat2
 
 
+class DarkNet53tiny_SqueezeGhost(nn.Module):
+
+    def __init__(self):
+        super(DarkNet53tiny_SqueezeGhost, self).__init__()
+        # 首先利用两次步长为2x2的3x3卷积进行高和宽的压缩
+        # 416,416,3 -> 208,208,32 -> 104,104,64
+        self.conv1 = BasicConv(3, 32, kernel_size=3, stride=2)
+        self.conv2 = BasicConv(32, 64, kernel_size=3, stride=2)
+        # 13,13,512 -> 13,13,512
+        # self.conv3 = BasicConv(512, 512, kernel_size=3)
+        self.conv3 = SqGhostConv(512, 512, kernel_size=3)
+
+        # 104,104,64 -> 52,52,128
+        self.resblock_body1 = SqGhostCSPblock(64, 64)
+        # 52,52,128 -> 26,26,256
+        self.resblock_body2 = SqGhostCSPblock(128, 128)
+        # 26,26,256 -> 13,13,512
+        self.resblock_body3 = SqGhostCSPblock(256, 256)
+        self.num_features = 1
+
+        # 进行权值初始化
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
+            elif isinstance(m, nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
+
+    def forward(self, x):
+        # 416,416,3 -> 208,208,32 -> 104,104,64
+        x = self.conv1(x)
+        x = self.conv2(x)
+
+        # 104,104,64 -> 52,52,128
+        x, _ = self.resblock_body1(x)
+        # 52,52,128 -> 26,26,256
+        x, _ = self.resblock_body2(x)
+        # 26,26,256 -> x为13,13,512
+        #           -> feat1为26,26,256
+        x, feat1 = self.resblock_body3(x)
+        # 13,13,512 -> 13,13,512
+        x = self.conv3(x)
+        feat2 = x
+        return feat1, feat2
+
+
+class DarkNet53tiny_SqueezeGhost2(nn.Module):
+
+    def __init__(self):
+        super(DarkNet53tiny_SqueezeGhost2, self).__init__()
+        # 首先利用两次步长为2x2的3x3卷积进行高和宽的压缩
+        # 416,416,3 -> 208,208,32 -> 104,104,64
+        self.conv1 = BasicConv(3, 32, kernel_size=3, stride=2)
+        self.conv2 = BasicConv(32, 64, kernel_size=3, stride=2)
+        # 13,13,512 -> 13,13,512
+        # self.conv3 = BasicConv(512, 512, kernel_size=3)
+        self.conv3 = SqGhostConv2(512, 512, kernel_size=3)
+
+        # 104,104,64 -> 52,52,128
+        self.resblock_body1 = SqGhostCSPblock2(64, 64)
+        # 52,52,128 -> 26,26,256
+        self.resblock_body2 = SqGhostCSPblock2(128, 128)
+        # 26,26,256 -> 13,13,512
+        self.resblock_body3 = SqGhostCSPblock2(256, 256)
+        self.num_features = 1
+
+        # 进行权值初始化
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
+            elif isinstance(m, nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
+
+    def forward(self, x):
+        # 416,416,3 -> 208,208,32 -> 104,104,64
+        x = self.conv1(x)
+        x = self.conv2(x)
+
+        # 104,104,64 -> 52,52,128
+        x, _ = self.resblock_body1(x)
+        # 52,52,128 -> 26,26,256
+        x, _ = self.resblock_body2(x)
+        # 26,26,256 -> x为13,13,512
+        #           -> feat1为26,26,256
+        x, feat1 = self.resblock_body3(x)
+        # 13,13,512 -> 13,13,512
+        x = self.conv3(x)
+        feat2 = x
+        return feat1, feat2
+
+
+class DarkNet53tiny_Mobile(nn.Module):
+
+    def __init__(self):
+        super(DarkNet53tiny_Mobile, self).__init__()
+        # 首先利用两次步长为2x2的3x3卷积进行高和宽的压缩
+        # 416,416,3 -> 208,208,32 -> 104,104,64
+        self.conv1 = BasicConv(3, 32, kernel_size=3, stride=2)
+        self.conv2 = BasicConv(32, 64, kernel_size=3, stride=2)
+        # 13,13,512 -> 13,13,512
+        # self.conv3 = BasicConv(512, 512, kernel_size=3)
+        self.conv3 = MobileBlock(512, 512, kernel_size=3)
+
+        # 104,104,64 -> 52,52,128
+        self.resblock_body1 = MobileCSPblock(64, 64)
+        # 52,52,128 -> 26,26,256
+        self.resblock_body2 = MobileCSPblock(128, 128)
+        # 26,26,256 -> 13,13,512
+        self.resblock_body3 = MobileCSPblock(256, 256)
+        self.num_features = 1
+
+        # 进行权值初始化
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
+            elif isinstance(m, nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
+
+    def forward(self, x):
+        # 416,416,3 -> 208,208,32 -> 104,104,64
+        x = self.conv1(x)
+        x = self.conv2(x)
+
+        # 104,104,64 -> 52,52,128
+        x, _ = self.resblock_body1(x)
+        # 52,52,128 -> 26,26,256
+        x, _ = self.resblock_body2(x)
+        # 26,26,256 -> x为13,13,512
+        #           -> feat1为26,26,256
+        x, feat1 = self.resblock_body3(x)
+        # 13,13,512 -> 13,13,512
+        x = self.conv3(x)
+        feat2 = x
+        return feat1, feat2
+
+
+
 class DarkNet53tiny_Ghostbottle_all_G3(nn.Module):
     def __init__(self):
         super(DarkNet53tiny_Ghostbottle_all_G3, self).__init__()
@@ -658,6 +800,50 @@ class DarkNet53tiny_Ghost(nn.Module):
         return feat1, feat2
 
 
+class DarkNet53tiny_Ghost2(nn.Module):
+
+    def __init__(self):
+        super(DarkNet53tiny_Ghost2, self).__init__()
+        # 首先利用两次步长为2x2的3x3卷积进行高和宽的压缩
+        # 416,416,3 -> 208,208,32 -> 104,104,64
+        self.conv1 = BasicConv(3, 32, kernel_size=3, stride=2)
+        self.conv2 = BasicConv(32, 64, kernel_size=3, stride=2)
+        # 13,13,512 -> 13,13,512
+        self.conv3 = GhostConv(512, 512, kernel_size=3)
+
+        # 104,104,64 -> 52,52,128
+        self.resblock_body1 = GhostResblock(64, 64)
+        # 52,52,128 -> 26,26,256
+        self.resblock_body2 = GhostResblock(128, 128)
+        # 26,26,256 -> 13,13,512
+        self.resblock_body3 = GhostResblock(256, 256)
+        self.num_features = 1
+
+        # 进行权值初始化
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
+            elif isinstance(m, nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
+
+    def forward(self, x):
+        # 416,416,3 -> 208,208,32 -> 104,104,64
+        x = self.conv1(x)
+        x = self.conv2(x)
+
+        # 104,104,64 -> 52,52,128
+        x, _ = self.resblock_body1(x)
+        # 52,52,128 -> 26,26,256
+        x, _ = self.resblock_body2(x)
+        # 26,26,256 -> x为13,13,512
+        #           -> feat1为26,26,256
+        x, feat1 = self.resblock_body3(x)
+        # 13,13,512 -> 13,13,512
+        x = self.conv3(x)
+        feat2 = x
+        return feat1, feat2
 
 
 #------------------------------------------------#
@@ -747,6 +933,41 @@ class GtinyResblockfirst(nn.Module):
         x = self.maxpool(x)
         return x, feat
 
+
+class GhostResblock(nn.Module):
+
+    def __init__(self, in_channels, out_channels):
+        super(GhostResblock, self).__init__()
+        self.out_channels = out_channels
+        self.conv1 = GhostConv(in_channels, out_channels, kernel_size=3)
+        self.conv2 = GhostConv(out_channels // 2, out_channels // 2, 3)
+        self.conv3 = GhostConv(out_channels // 2, out_channels // 2, 3)
+        self.conv4 = BasicConv(out_channels, out_channels, 1)
+        self.maxpool = nn.MaxPool2d([2, 2], [2, 2])
+
+    def forward(self, x):
+        # 利用一个3x3卷积进行特征整合
+        x = self.conv1(x)
+        # 引出一个大的残差边route
+        route = x
+        c = self.out_channels
+        # 对特征层的通道进行分割，取第二部分作为主干部分。
+        x = torch.split(x, c // 2, dim=1)[1]
+        # 对主干部分进行3x3卷积
+        x = self.conv2(x)
+        # 引出一个小的残差边route_1
+        route1 = x
+        # 对第主干部分进行3x3卷积
+        x = self.conv3(x)
+        # 主干部分与残差部分进行相接
+        x = torch.cat([x, route1], dim=1)
+        # 对相接后的结果进行1x1卷积
+        x = self.conv4(x)
+        feat = x
+        x = torch.cat([route, x], dim=1)
+        # 利用最大池化进行高和宽的压缩
+        x = self.maxpool(x)
+        return x, feat
 
 
 class GtinyResblock(nn.Module):
@@ -881,6 +1102,115 @@ class Gtinybottleblock2(nn.Module):
         # 利用最大池化进行高和宽的压缩
         x = self.maxpool(x)
         return x, feat
+
+
+class SqGhostCSPblock(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(SqGhostCSPblock, self).__init__()
+        self.out_channels = out_channels
+        self.conv1 = SqGhostConv(in_channels, out_channels, 3)
+        self.conv2 = SqGhostConv(out_channels // 2, out_channels // 2, 3)
+        self.conv3 = SqGhostConv(out_channels // 2, out_channels // 2, 3)
+        self.conv4 = BasicConv(out_channels, out_channels, 1)
+        self.maxpool = nn.MaxPool2d([2, 2], [2, 2])
+
+    def forward(self, x):
+        # 利用一个3x3卷积进行特征整合
+        x = self.conv1(x)
+        # 引出一个大的残差边route
+        route = x
+        c = self.out_channels
+        # 对特征层的通道进行分割，取第二部分作为主干部分。
+        x = torch.split(x, c // 2, dim=1)[1]
+        # 对主干部分进行3x3卷积
+        x = self.conv2(x)
+        # 引出一个小的残差边route_1
+        route1 = x
+        # 对第主干部分进行3x3卷积
+        x = self.conv3(x)
+        # 主干部分与残差部分进行相接
+        x = torch.cat([x, route1], dim=1)
+        # 对相接后的结果进行1x1卷积
+        x = self.conv4(x)
+        feat = x
+        x = torch.cat([route, x], dim=1)
+        # 利用最大池化进行高和宽的压缩
+        x = self.maxpool(x)
+        return x, feat
+
+
+class SqGhostCSPblock2(nn.Module):
+
+    def __init__(self, in_channels, out_channels):
+        super(SqGhostCSPblock2, self).__init__()
+        self.out_channels = out_channels
+        self.conv1 = SqGhostConv2(in_channels, out_channels, 3)
+        self.conv2 = SqGhostConv2(out_channels // 2, out_channels // 2, 3)
+        self.conv3 = SqGhostConv2(out_channels // 2, out_channels // 2, 3)
+        self.conv4 = BasicConv(out_channels, out_channels, 1)
+        self.maxpool = nn.MaxPool2d([2, 2], [2, 2])
+
+    def forward(self, x):
+        # 利用一个3x3卷积进行特征整合
+        x = self.conv1(x)
+        # 引出一个大的残差边route
+        route = x
+        c = self.out_channels
+        # 对特征层的通道进行分割，取第二部分作为主干部分。
+        x = torch.split(x, c // 2, dim=1)[1]
+        # 对主干部分进行3x3卷积
+        x = self.conv2(x)
+        # 引出一个小的残差边route_1
+        route1 = x
+        # 对第主干部分进行3x3卷积
+        x = self.conv3(x)
+        # 主干部分与残差部分进行相接
+        x = torch.cat([x, route1], dim=1)
+        # 对相接后的结果进行1x1卷积
+        x = self.conv4(x)
+        feat = x
+        x = torch.cat([route, x], dim=1)
+        # 利用最大池化进行高和宽的压缩
+        x = self.maxpool(x)
+        return x, feat
+
+
+
+class MobileCSPblock(nn.Module):
+
+    def __init__(self, in_channels, out_channels):
+        super(MobileCSPblock, self).__init__()
+        self.out_channels = out_channels
+        self.conv1 = MobileBlock(in_channels, out_channels, 3)
+        self.conv2 = MobileBlock(out_channels // 2, out_channels // 2, 3)
+        self.conv3 = MobileBlock(out_channels // 2, out_channels // 2, 3)
+        self.conv4 = BasicConv(out_channels, out_channels, 1)
+        self.maxpool = nn.MaxPool2d([2, 2], [2, 2])
+
+    def forward(self, x):
+        # 利用一个3x3卷积进行特征整合
+        x = self.conv1(x)
+        # 引出一个大的残差边route
+        route = x
+        c = self.out_channels
+        # 对特征层的通道进行分割，取第二部分作为主干部分。
+        x = torch.split(x, c // 2, dim=1)[1]
+        # 对主干部分进行3x3卷积
+        x = self.conv2(x)
+        # 引出一个小的残差边route_1
+        route1 = x
+        # 对第主干部分进行3x3卷积
+        x = self.conv3(x)
+        # 主干部分与残差部分进行相接
+        x = torch.cat([x, route1], dim=1)
+        # 对相接后的结果进行1x1卷积
+        x = self.conv4(x)
+        feat = x
+        x = torch.cat([route, x], dim=1)
+        # 利用最大池化进行高和宽的压缩
+        x = self.maxpool(x)
+        return x, feat
+
 
 
 class Gtinybottleblock3(nn.Module):
@@ -1179,7 +1509,7 @@ class Bottleneck(nn.Module):
         self.avgpool=nn.AvgPool2d([2,2],[2,2])
         self.conv4 = Conv(inplanes,planes*self.expansion,kernel_size=1,stride=2,activation='linear',bn=True)
         self.downsample = downsample
-  
+
 
     def forward(self, x):
         identity = x
@@ -1258,7 +1588,7 @@ class Yolov4_ResBlock(nn.Module):
                 h = res(h)
             x = x + h if self.shortcut else h
         return x
-    
+
 class Yolov4_DownSampleFirst(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(Yolov4_DownSampleFirst, self).__init__()

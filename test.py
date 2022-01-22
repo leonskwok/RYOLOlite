@@ -114,8 +114,7 @@ if __name__ == "__main__":
             # sample_metrics[true_positives, pred_scores, pred_labels]
             # sample_metrics += get_batch_statistics(outputs, targets, iou_threshold=args.iou_thres)
             for i in range(len(thre)):
-                sample_metric, hardsample ,samplerecdata = new_get_batch_statistics(outputs, targets, paths, thre[i]/100)
-                
+                sample_metric, hardsample ,samplerecdata = new_get_batch_statistics(outputs, targets, paths, thre[i]/100)                
                 sample_metrics[i] += sample_metric
                 recdata[i].extend(samplerecdata)
                 rec_hardsample[i].extend((hardsample))
@@ -138,7 +137,7 @@ if __name__ == "__main__":
         # Ang.txt, Catch.txt
         datastatistical(torch.Tensor(recdata[i]), thre[i], ncls, class_names, Angfile, Catchfile)
 
-        # 不同阈值下的检测结果记录APxx.txt
+        # stat/APxx.txt  stat/Hardxx.txt
         np.savetxt(os.path.join(Statdir,'AP%d.txt'%(thre[i])),  torch.Tensor(recdata[i]).numpy())
         averageAP.append(AP.mean())
 
