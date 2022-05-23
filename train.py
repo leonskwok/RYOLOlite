@@ -78,8 +78,6 @@ if __name__ == "__main__":
     val_dataset, gen_val = split_data(
         val_folder,ncls, imgsize, valbatchsize, shuffle=True)
 
-    
-
     num_train=len(train_dataset)
     num_val=len(val_dataset)
 

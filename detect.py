@@ -12,7 +12,6 @@ from model import yololayer
 from tools.plot import load_class_names, plot_boxes
 from tools.post_process import post_process
 from tools.load import ImageDataset
-from model.model import RYOLOv4, TinyYolo
 
 cfg = config()
 os.environ["CUDA_VISIBLE_DEVICES"] = cfg.GPU

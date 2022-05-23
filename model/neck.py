@@ -33,35 +33,6 @@ class Neck_tiny(nn.Module):
         return x3, x1
 
 
-class Neck_tiny_TripeAtte(nn.Module):
-    # [256, 512]
-    def __init__(self):
-        super().__init__()
-        # yolohead2分支
-        self.conv1 = BasicConv(512, 256, 1)
-        self.conv2 = BasicConv(256, 128, 1)
-        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
-
-        self.attblock = TripletAttention()
-
-    def forward(self, feat1, feat2):
-        if self.attblock != None:
-            feat1 = self.attblock(feat1)
-            feat2 = self.attblock(feat2)
-        # conv1x1  13,13,512 -> 13,13,256
-        x1 = self.conv1(feat2)
-        # conv1x1  13, 13, 256 -> 13, 13, 128
-        x2 = self.conv2(x1)
-        # upsample 13,13,128 -> 26,26,128
-        x3 = self.upsample(x2)
-        # 26,26,256 + 26,26,128 -> 26,26,384
-        # if self.attblock != None:
-        #     x3 = self.attblock(x3)
-        # contact
-        x3 = torch.cat([x3, feat1], axis=1)
-        return x3, x1
-
-
 class Neck_PanNet(nn.Module):
     # 1024 512,256
     def __init__(self, in_chs1,in_chs2,in_chs3):

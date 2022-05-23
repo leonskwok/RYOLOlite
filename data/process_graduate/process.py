@@ -155,14 +155,14 @@ def visualize(image_root, gt_root, output_root):
 
 
 root = '/home/guoliangliang/Documents/R-YOLOv4-main/data/'
-processdir = root + 'process/'
+processdir=root+'process_graduate/'
 img_dir = processdir + 'img/'
 xml_dir = processdir + 'xml/'
 txt_dir = processdir + 'txt/'
 out_dir = processdir + 'out/'
 vis_dir = processdir + 'vis/'
 
-datasetdir=root+'dataset_new/'
+datasetdir = root + 'dataset_graduate/'
 detect_dir = datasetdir + "detect/"
 train_dir = datasetdir + "train/"
 test_dir = datasetdir + "test/"
@@ -226,10 +226,10 @@ def pad_to_square(img, pad_value):
     return img, pad
 
 
-def processimgtest(imgpath,txtpath,savepath):
+def processimgtest(imgpath,txtpath,savedir):
     img = cv2.imread(imgpath, cv2.IMREAD_COLOR)
 
-    cv2.imwrite(savepath+'origin.jpg', img)
+    cv2.imwrite(savedir+'origin.jpg', img)
 
     txt = loadtxt(txtpath)
     mB = np.mean(img[:, :, 0])
@@ -243,12 +243,12 @@ def processimgtest(imgpath,txtpath,savepath):
     cy = (y1+y3)/2
 
     ratio = random.randint(5, 12)/10
-    ratio = 1.4
+    ratio = 1.2
     affineM = np.array(
         [[ratio, 0, cx*(1-ratio)], [0, ratio, cy*(1-ratio)]], np.float32)
     kimg = cv2.warpAffine(img, affineM, (imgw, imgh),
                           borderValue=[mB, mG, mR])
-    cv2.imwrite(savepath + 'size.jpg', kimg)
+    cv2.imwrite(savedir+'size.jpg', kimg)
     x1 = int(cx+ratio*(x1-cx))
     x2 = int(cx+ratio*(x2-cx))
     x3 = int(cx+ratio*(x3-cx))
@@ -261,7 +261,7 @@ def processimgtest(imgpath,txtpath,savepath):
     location = np.array([list(p) for p in points])
     tempimg = kimg.copy()
     cv2.drawContours(tempimg,[location],-1,(0,255,0),2)
-    cv2.imwrite(savepath + 'label.jpg', tempimg)
+    cv2.imwrite(savedir+'label.jpg', tempimg)
 
 
     # 获得弧度偏移 顺时针方向为正
@@ -280,7 +280,7 @@ def processimgtest(imgpath,txtpath,savepath):
     # 图片旋转
     kimg = cv2.warpAffine(kimg, M, (imgw, imgh), borderMode=cv2.BORDER_CONSTANT, borderValue=[mB, mG, mR])
 
-    cv2.imwrite(savepath + 'rotate.jpg', kimg)
+    cv2.imwrite(savedir+'rotate.jpg', kimg)
 
     # 获得最小/最大偏移量
     xoff_min = int(min(x1, x2, x3, x4))
@@ -291,21 +291,21 @@ def processimgtest(imgpath,txtpath,savepath):
     # 获得随机偏移量
     rand_x = random.randint(-xoff_min, xoff_max)
     rand_y = random.randint(-yoff_min, yoff_max)
-
+    rand_x = 0.75*xoff_max
     # 图片偏移
     M = np.float32([[1, 0, rand_x], [0, 1, rand_y]])
     kimg = cv2.warpAffine(kimg, M, (imgw, imgh),borderMode=cv2.BORDER_WRAP)
 
-    cv2.imwrite(savepath + 'move.jpg', kimg)
+    cv2.imwrite(savedir+'move.jpg', kimg)
 
     kimg = gasuss_noise(kimg, 0, 0.003)
-    cv2.imwrite(savepath + 'noise.jpg', kimg)
+    cv2.imwrite(savedir + 'noise.jpg', kimg)
 
     kimg,pad = pad_to_square(kimg,0)
-    cv2.imwrite(savepath + 'pad.jpg', kimg)
+    cv2.imwrite(savedir + 'pad.jpg', kimg)
 
     cv2.resize(kimg,(416,416),kimg,interpolation=cv2.INTER_LINEAR)
-    cv2.imwrite(savepath + 'resize.jpg', kimg)
+    cv2.imwrite(savedir+'resize.jpg', kimg)
 
 
 def creat(img_dir, txt_dir, targetpath, times, islabel, isgaosi):
@@ -314,7 +314,8 @@ def creat(img_dir, txt_dir, targetpath, times, islabel, isgaosi):
     # TxtFiles = Get_JpgTxtfiles(PreTxtPath, '.txt')
 
     for i in range(len(ImgFiles)):
-        type = int(os.path.splitext(ImgFiles[i])[0])//2
+
+        type = int(os.path.splitext(ImgFiles[i])[0])
         #读取指定img和txt
 
         txt = loadtxt(txt_dir + os.path.splitext(ImgFiles[i])[0]+'.txt')
@@ -337,6 +338,7 @@ def creat(img_dir, txt_dir, targetpath, times, islabel, isgaosi):
             cx = (x1+x3)/2
             cy = (y1+y3)/2
 
+            # 随机缩放
             ratio = random.randint(50,120)/100
             affineM = np.array([[ratio, 0, cx*(1-ratio)], [0, ratio, cy*(1-ratio)]], np.float32)
             kimg = cv2.warpAffine(kimg, affineM, (imgw, imgh), borderValue=[mB, mG, mR])
@@ -436,24 +438,23 @@ if __name__ == '__main__':
 
     # shutil.rmtree(train_dir)
     # os.makedirs(train_dir)
-    # creat(img_dir, txt_dir, train_dir, 1000,  islabel=True, isgaosi=True)
+    # creat(img_dir, txt_dir, train_dir, 2000,  islabel=True, isgaosi=True)
 
     # shutil.rmtree(test_dir)
     # os.makedirs(test_dir)
-    # creat(img_dir, txt_dir, test_dir, 250,  islabel=True, isgaosi=False)
+    # creat(img_dir, txt_dir, test_dir, 500,  islabel=True, isgaosi=False)
 
     # shutil.rmtree(val_dir)
     # os.makedirs(val_dir)
-    # creat(img_dir, txt_dir, val_dir, 25,  islabel=True, isgaosi=False)
+    # creat(img_dir, txt_dir, val_dir, 10,  islabel=True, isgaosi=False)
 
     shutil.rmtree(detect_dir)
     os.makedirs(detect_dir)
-    creat(img_dir, txt_dir, detect_dir, 3, islabel=False, isgaosi=False)
+    creat(img_dir, txt_dir, detect_dir, 5, islabel=False, isgaosi=False)
 
     # shutil.rmtree(vis_dir)
     # os.makedirs(vis_dir)
-    # visualize(val_dir + str(1)+'/',
-    #           val_dir + str(1)+'/', vis_dir)
+    # visualize(val_dir + str(1)+'/', val_dir + str(1)+'/', vis_dir)
     # processimgtest(processdir+'img/3.jpg',
     #                processdir+'txt/3.txt',
     #                processdir+'imgtest/')

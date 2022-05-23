@@ -231,16 +231,12 @@ class GhostPointConv(nn.Module):
         x = self.activation(x)
         return x
 
-
-
 class Mish(nn.Module):
     def __init__(self):
         super().__init__()
 
     def forward(self, x):
         return x * (torch.tanh(F.softplus(x)))
-
-
 
 class Conv(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, activation, bn=True, bias=False):
@@ -471,45 +467,8 @@ class GhostConv(nn.Module):
         return out[:, :self.oup, :, :]
 
 
-class SqGhostConv(nn.Module):
-    def __init__(self, inp, oup, kernel_size=1, ratio=2, dw_size=3, stride=1, relu=True):
-        super(SqGhostConv, self).__init__()
-        self.oup = oup
-        init_channels = math.ceil(oup / ratio)
-        new_channels = init_channels*(ratio-1)
-
-        self.squeeze_conv = nn.Sequential(
-            nn.Conv2d(inp,init_channels,1,1,0,bias=False),
-            nn.BatchNorm2d(init_channels),
-            nn.LeakyReLU(0.1, inplace=True) if relu else nn.Sequential())
-
-        self.dw_conv=nn.Sequential(
-            nn.Conv2d(init_channels,init_channels,kernel_size,stride,padding=kernel_size//2,groups=init_channels,bias=False),
-            nn.BatchNorm2d(init_channels),
-            nn.LeakyReLU(0.1, inplace=True) if relu else nn.Sequential()
-        )
-        self.point_conv = nn.Sequential(
-            nn.Conv2d(init_channels, init_channels, 1, 1, 0, bias=False),
-            nn.BatchNorm2d(init_channels),
-            nn.LeakyReLU(0.1, inplace=True) if relu else nn.Sequential())
-
-        self.cheap_operation = nn.Sequential(
-            nn.Conv2d(init_channels, new_channels, dw_size, 1,
-                      dw_size//2, groups=init_channels, bias=False),
-            nn.BatchNorm2d(new_channels),
-            nn.LeakyReLU(0.1, inplace=True) if relu else nn.Sequential(),
-        )
-    def forward(self, x):
-        x1 = self.squeeze_conv(x)
-        x1 = self.dw_conv(x1)
-        x1 = self.point_conv(x1)
-        x2 = self.cheap_operation(x1)
-        out = torch.cat([x1, x2], dim=1)
-        return out[:, :self.oup, :, :]
-
 
 class SqGhostConv2(nn.Module):
-
     def __init__(self,
                  inp,
                  oup,
@@ -561,7 +520,6 @@ class SqGhostConv2(nn.Module):
 
 class MobileBlock(nn.Module):
     '''Depthwise conv + Pointwise conv'''
-
     def __init__(self, in_planes, out_planes, kernel_size, stride=1):
         super(MobileBlock, self).__init__()
         self.conv1 = nn.Conv2d(in_planes,

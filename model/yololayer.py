@@ -24,7 +24,7 @@ def anchor_wh_iou(wh1, wh2):
 
 
 class YoloLossLayer(nn.Module):
-    def __init__(self, ncls, anchors, angles, anchors_mask, input_shape, ignore_iouthresh, ignore_angthresh):
+    def __init__(self, ncls, anchors, angles, anchors_mask, input_shape, ignore_iouthresh, ignore_angthresh, ifreg_const):
         super(YoloLossLayer, self).__init__()
         self.ncls = ncls
         self.anchors = anchors
@@ -33,6 +33,8 @@ class YoloLossLayer(nn.Module):
         self.anchors_mask = anchors_mask
         self.ignore_iouthresh = ignore_iouthresh
         self.ignore_angthresh = ignore_angthresh
+
+        self.ifreg_const=ifreg_const
 
         self.lambda_coord = 1.0
         self.lambda_conf_scale = 1.0
@@ -210,12 +212,12 @@ class YoloLossLayer(nn.Module):
 
             reg_loss = angle_loss + ciou_loss[obj_mask]
             
-            # reg_loss = reg_loss.mean()
-
-            with torch.no_grad():
-                reg_const = iou_const / reg_loss
-            reg_loss = (reg_loss * reg_const).mean()
-
+            if self.ifreg_const:
+                with torch.no_grad():
+                    reg_const = iou_const / reg_loss           
+                reg_loss = (reg_loss * reg_const).mean()
+            else:
+                reg_loss = reg_loss.mean()
 
             # Focal Loss for object's prediction
             # FOCAL = FocalLoss(reduction="mean")

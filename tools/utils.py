@@ -384,6 +384,7 @@ def datastatistical(data, AP, ncls, classname, APpath, Catchpath):
     dh = torch.abs(ph-gh)
     da = (torch.abs(pa-ga)/torch.pi*180) % 90
     
+    
     n00_05 = 0
     n05_10 = 0
     n10_30 = 0

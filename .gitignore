@@ -1,23 +1,18 @@
 .DS_Store
 __pycache__/
 .vscode
-data/detect
-data/detect_new
-data/val
-data/val_new
-data/test
-data/test_new
-data/train
-data/train_new
-data/hardsample
-logs/
-opencvmethod/
-weights
-results
-results2
-results3
-results4
-outputs
-data/process/vis
+
+data/dataset_new/*/*
+data/dataset_graduate/*/*
+data/hardsample/*
+logs/*
+weights/*
+
+
+results/*
+result_graduate/
+outputs/*
+data/process/vis/*
+
 
 
