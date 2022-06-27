@@ -2,17 +2,16 @@
 __pycache__/
 .vscode
 
-data/dataset_new/*/*
-data/dataset_graduate/*/*
-data/hardsample/*
-logs/*
-weights/*
+data/dataset_5workpiece/*/*
+data/dataset_UCAS_AOD/*/*
 
+data/UCAS-AOD-benchmark-master
+weights/*
+others/*
 
 results/*
-result_graduate/
 outputs/*
-data/process/vis/*
+data/process_5workpiece/vis/*
 
 
 

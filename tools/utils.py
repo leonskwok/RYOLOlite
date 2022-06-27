@@ -143,8 +143,6 @@ def ap_per_class(tp, conf, pred_cls, target_cls):
     tp, conf, pred_cls = tp[i], conf[i], pred_cls[i]
 
     
-
-
     # Find unique classes
     # 收集所有图片中出现的工件类
     unique_classes = np.unique(target_cls)
@@ -279,14 +277,15 @@ def get_batch_statistics(outputs, targets, iou_threshold):
         # batch_metrics[true_positives,pred_scores，pred_labels]
     return batch_metrics
 
-def new_get_batch_statistics(outputs, targets, paths, iou_threshold):
+def batch_statistics(outputs, targets, paths, iou_threshold):
     """ Compute true positives, predicted scores and predicted labels per sample """
-    # tensor targets[:(x, y, w, h, a, cls, idx)], 注意已经转为绝对坐标
-    # 数组   outputs:[bs:,(x,y,w,h,a,conf,cls_conf,cls_idx)]
+    # tensor targets[nB,(x, y, w, h, a, cls, idx)], 注意已经原图上绝对坐标
+    # 数组   outputs:[nB,:,(x,y,w,h,a,conf,cls_conf,cls_idx)]
     batch_metrics = []
-
     rec_hardsample=[]
     recdata=[]
+
+    targets = targets.cpu()
 
     # 轮询每一张图片
     for sample_i in range(len(outputs)):
@@ -294,7 +293,7 @@ def new_get_batch_statistics(outputs, targets, paths, iou_threshold):
         if outputs[sample_i] is None:
             continue
         # output是其中一幅图的检测到的所有目标
-        output = outputs[sample_i]
+        output = outputs[sample_i].cpu()
         pred_boxes = output[:, :5]
         pred_scores = output[:, 5]
         pred_labels = output[:, -1]
@@ -305,7 +304,6 @@ def new_get_batch_statistics(outputs, targets, paths, iou_threshold):
         annotations = targets[targets[:, 6] == sample_i][:, :6]
         # 对应图片的目标的lable集合
         target_labels = annotations[:, 5] if len(annotations) else []
-
 
         # 图片中存在目标框
         if len(annotations):
@@ -329,42 +327,36 @@ def new_get_batch_statistics(outputs, targets, paths, iou_threshold):
                 if iou>1:
                     print(box_index)
                 
+                # 预测框与目标框的iou大于threhold，则认为准确预测并记录
                 gtclass = target_labels[box_index]
                 preclass = pred_label
-
-
-                # 预测框与目标框的iou大于threhold，则认为准确预测并记录
                 if iou >= iou_threshold and box_index not in detected_boxes and preclass==gtclass:
                     # true_positives预测框中的正例或负例，1为正例，0为负例
                     true_positives[pred_i] = 1
 
                     # 记录已经成功预测的目标框的idx集合
                     detected_boxes += [box_index]
-                    
+                    # 记录预测成功的预测框的数据
                     px, py, pw, ph, pa = pred_box
-                    gx, gy, gw, gh, ga = target_boxes[box_index]
-                    
+                    gx, gy, gw, gh, ga = target_boxes[box_index]                  
                     recdata.append([px, py, pw, ph, pa, gx, gy,
                                    gw, gh, ga, iou, preclass, gtclass])
-
-                    da=(torch.abs(pa-ga)/np.pi*180)%90
-
-                    # 记录预测过大的图片路径 
-                    if da>30:
-                        rec_hardsample.append([paths[sample_i],da])
                     
+                    # 记录预测误差过大的图片路径
+                    da=(180*torch.abs(pa-ga)/np.pi)%90                   
+                    if da>30:
+                        rec_hardsample.append([paths[sample_i],da])                   
                     dxy = torch.sqrt((px-gx)*(px-gx)+(py-gy)*(py-gy))
                     if dxy>1.35:
                         rec_hardsample.append([paths[sample_i], dxy])
-
-                                               
-        # true_positives.sort()
-        batch_metrics.append([true_positives, pred_scores.cpu(), pred_labels.cpu()])
-        # batch_metrics[true_positives,pred_scores，pred_labels,pred_angles]
+        # [正例, 预测置信度, 预测类别]
+        batch_metrics.append([true_positives, pred_scores, pred_labels])
+        
     return batch_metrics, rec_hardsample, recdata
 
 
-def datastatistical(data, AP, ncls, classname, APpath, Catchpath):
+def datastatistical(data, AP, ncls, classname, APpath, Catchpath, num_imgs):
+    num_percls = num_imgs/ncls
     px = data[:, 0]
     py = data[:, 1]
     pw = data[:, 2]
@@ -382,7 +374,7 @@ def datastatistical(data, AP, ncls, classname, APpath, Catchpath):
     dxy = torch.sqrt(dx*dx+dy*dy)
     dw = torch.abs(pw-gw)
     dh = torch.abs(ph-gh)
-    da = (torch.abs(pa-ga)/torch.pi*180) % 90
+    da =(180*(torch.abs(pa-ga)/(np.pi))) % 90
     
     
     n00_05 = 0
@@ -427,7 +419,7 @@ def datastatistical(data, AP, ncls, classname, APpath, Catchpath):
             # 分类
             clsdata = clsdata[clsdata[:, 11] == i]
 
-            sum = 500 if len(clsdata) < 500 else len(clsdata)
+            sum = num_percls
             clsdata = clsdata[clsdata[:, 12] == i]
             # 角度
             pa = clsdata[:, 4]

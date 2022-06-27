@@ -2,32 +2,28 @@ import torch
 from tools.utils import skewiou_fun
 
 def post_process(prediction, conf_thres=0.5, nms_thres=0.4):
-    """
-    Args:
-        prediction: size-> [batch, ((grid x grid) + (grid x grid) + (grid x grid)) x num_anchors, 8]
-                    ex: [1, ((52 x 52) + (26 x 26) + (13 x 13)) x 18, 10] in my case
-                    last dimension-> [x, y, w, h, a, conf, num_classes]
-    Returns:
-        (x1, y1, x2, y2, object_conf, class_score, class_pred)
-    """
-    # prediction[batch_size, (76*76+38*38+19*19)*3*6, (x,y,w,h,a,conf,ncls...)]
+    # prediction[nB, (52*52+26*26+13*13)*3*6, (x,y,w,h,a,conf,ncls...)]
     output = [None for _ in range(len(prediction))]
     # 轮询每一幅图
     for batch, image_pred in enumerate(prediction):
-        # image_pred[(76*76+38*38+19*19)*3*6, (x,y,w,h,a,conf,ncls...)]
-        # 过滤掉低置信度的anchor
+        # image_pred[(52*52+26*26+13*13)*3*6, (x,y,w,h,a,conf,ncls...)]
+        # 过滤掉低置信度的预测框
         image_pred = image_pred[image_pred[:, 5] >= conf_thres]
 
+        # 没有检测到目标
         if not image_pred.size(0):
             continue
 
         # max(1)[0]返回所有行中的最大值,即最大类别置信度
         # score=clsconf*conf，conf为是否存在物体置信度，两者乘积即为该anchor的得分
         score = image_pred[:, 5] * image_pred[:, 6:].max(1)[0]
+
         # 根据score从大到小排列image_pred，即排列所有anchor框
         image_pred = image_pred[(-score).argsort()]
+
         # 每个anchor框对应的最大类别置信度即其类别索引(0-ncls)
         class_confs, class_preds = image_pred[:, 6:].max(1, keepdim=True)
+        
         # detection即为经过刷选和置信度排序的anchor框，detections[numanchor:(x,y,w,h,a,conf,cls_conf,cls_idx)]
         detections = torch.cat((image_pred[:, :6], class_confs.float(), class_preds.float()), 1)
 

@@ -42,36 +42,36 @@ def get_color(c, x, max_val):
 
 def plot_boxes(img_path, boxes, class_names, img_size, output_folder, color=None):
     img = np.array(cv.imread(img_path))
+    if boxes is not None:
+        boxes = rescale_boxes(boxes, img_size, img.shape[:2])
+        boxes = np.array(to_cpu(boxes))
 
-    boxes = rescale_boxes(boxes, img_size, img.shape[:2])
-    boxes = np.array(to_cpu(boxes))
+        for i in range(len(boxes)):
+            box = boxes[i]
+            x, y, w, h, theta = box[0], box[1], box[2], box[3], box[4]
 
-    for i in range(len(boxes)):
-        box = boxes[i]
-        x, y, w, h, theta = box[0], box[1], box[2], box[3], box[4]
+            X1, Y1, X2, Y2, X3, Y3, X4, Y4 = xywha2xyxyxyxy(torch.tensor([x, y, w, h, theta]))
+            X1, Y1, X2, Y2, X3, Y3, X4, Y4 = int(X1), int(Y1), int(X2), int(Y2), int(X3), int(Y3), int(X4), int(Y4)
 
-        X1, Y1, X2, Y2, X3, Y3, X4, Y4 = xywha2xyxyxyxy(torch.tensor([x, y, w, h, theta]))
-        X1, Y1, X2, Y2, X3, Y3, X4, Y4 = int(X1), int(Y1), int(X2), int(Y2), int(X3), int(Y3), int(X4), int(Y4)
+            bbox = np.int0([(X1, Y1), (X2, Y2), (X3, Y3), (X4, Y4)])
+            cv.drawContours(img, [bbox], 0, (0, 255, 0), 2)
 
-        bbox = np.int0([(X1, Y1), (X2, Y2), (X3, Y3), (X4, Y4)])
-        cv.drawContours(img, [bbox], 0, (0, 255, 0), 2)
+            if color:
+                rgb = color
+            else:
+                rgb = (255, 0, 0)
 
-        if color:
-            rgb = color
-        else:
-            rgb = (255, 0, 0)
+            cls_id = np.squeeze(int(box[7]))
+            classes = len(class_names)
+            offset = cls_id * 123457 % classes
+            red = get_color(2, offset, classes)
+            green = get_color(1, offset, classes)
+            blue = get_color(0, offset, classes)
+            if color is None:
+                rgb = (red, green, blue)
 
-        cls_id = np.squeeze(int(box[7]))
-        classes = len(class_names)
-        offset = cls_id * 123457 % classes
-        red = get_color(2, offset, classes)
-        green = get_color(1, offset, classes)
-        blue = get_color(0, offset, classes)
-        if color is None:
-            rgb = (red, green, blue)
-
-        img = cv.putText(img, class_names[cls_id] + ":" + str(round(box[5] * box[6], 2)),
-                         (X1, Y1), cv.FONT_HERSHEY_SIMPLEX, 0.6, rgb, 1)
+            img = cv.putText(img, class_names[cls_id] + ":" + str(round(box[5] * box[6], 2)),
+                            (X1, Y1), cv.FONT_HERSHEY_SIMPLEX, 0.6, rgb, 1)
 
     output_path = str(output_folder) + "/" + img_path.split('/')[-1]
     cv.imwrite(output_path, img)
