@@ -356,6 +356,8 @@ def batch_statistics(outputs, targets, paths, iou_threshold):
 
 
 def datastatistical(data, AP, ncls, classname, APpath, Catchpath, num_imgs):
+    if len(data)==0:
+        return
     num_percls = num_imgs/ncls
     px = data[:, 0]
     py = data[:, 1]
@@ -384,19 +386,16 @@ def datastatistical(data, AP, ncls, classname, APpath, Catchpath, num_imgs):
     n60_90 = 0
     total = len(da)
     for a in da:
-      if a <= 5:
-          n00_05 += 1
-      elif a > 5 and a <= 10:
-          n05_10 += 1
-      elif a > 10 and a <= 30:
-          n10_30 += 1
-      elif a > 30 and a < 60:
-          n30_60 += 1
-      else:
-          n60_90 += 1
-
-    
-
+        if a <= 5:
+            n00_05 += 1
+        elif a > 5 and a <= 10:
+            n05_10 += 1
+        elif a > 10 and a <= 30:
+            n10_30 += 1
+        elif a > 30 and a < 60:
+            n30_60 += 1
+        else:
+            n60_90 += 1
 
     with open(APpath, 'a+') as f:
         f.writelines('%d\n'%(AP))

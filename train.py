@@ -85,8 +85,7 @@ def train():
     if not os.path.exists(weights_folder):
         os.makedirs(weights_folder)
     for epoch in range(start_epoch, end_epoch):
-        fit_one_epoch(model_train, model, yolo_layer, loss_history, optimizer, epoch,
-                      epoch_step, epoch_step_val, gen, gen_val, end_epoch, CUDA, weights_folder)
+        fit_one_epoch(model_train, model, yolo_layer, loss_history, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, end_epoch, CUDA, weights_folder, False)
         lr_scheduler.step()
 
     loss_plot(cfg.weights_folder)

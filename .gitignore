@@ -5,11 +5,8 @@ __pycache__/
 data/dataset_5workpiece/*/*
 data/dataset_UCAS_AOD/*/*
 
-data/UCAS-AOD-benchmark-master
 weights/*
 others/*
-
-results/*
 outputs/*
 data/process_5workpiece/vis/*
 

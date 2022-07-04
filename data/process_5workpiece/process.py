@@ -6,9 +6,62 @@ import numpy as np
 import math
 import cv2
 from numpy.lib.npyio import loadtxt
-
+import os
 import shutil
 import xml.etree.cElementTree as ET
+
+
+def process():
+
+    root = os.path.join(os.getcwd(), 'data')
+    processdir = os.path.join(root, 'process_5workpiece')
+
+    img_dir = os.path.join(processdir, 'img')
+    xml_dir = os.path.join(processdir, 'xml')
+    txt_dir = os.path.join(processdir, 'txt')
+    out_dir = os.path.join(processdir, 'out')
+    vis_dir = os.path.join(processdir, 'vis')
+
+    datasetdir = os.path.join(root, 'dataset_5workpiece')
+    detect_dir = os.path.join(datasetdir, 'detect')
+    train_dir = os.path.join(datasetdir, 'train')
+    test_dir = os.path.join(datasetdir, 'test')
+    val_dir = os.path.join(datasetdir, 'val')
+
+    # if os.path.exists(txt_dir):
+    #     shutil.rmtree(txt_dir)
+    # os.makedirs(txt_dir)
+    # xml_to_list(xml_dir, txt_dir)
+
+    # if os.path.exists(train_dir):
+    #     shutil.rmtree(train_dir)
+    # os.makedirs(train_dir)
+    # creat(img_dir, txt_dir, train_dir, 500,  islabel=True, isgaosi=True)
+
+    # if os.path.exists(test_dir):
+    #     shutil.rmtree(test_dir)
+    # os.makedirs(test_dir)
+    # creat(img_dir, txt_dir, test_dir, 50,  islabel=True, isgaosi=False)
+
+    if os.path.exists(val_dir):
+        shutil.rmtree(val_dir)
+    os.makedirs(val_dir)
+    creat(img_dir, txt_dir, val_dir, 10,  islabel=True, isgaosi=False)
+
+    # if os.path.exists(detect_dir):
+    #     shutil.rmtree(detect_dir)
+    # os.makedirs(detect_dir)
+    # creat(img_dir, txt_dir, detect_dir, 1, islabel=False, isgaosi=False)
+
+    # if os.path.exists(vis_dir):
+    #     shutil.rmtree(vis_dir)
+    # os.makedirs(vis_dir)
+
+    # visualize(os.path.join(val_dir, str(1)), os.path.join(val_dir, str(1)), vis_dir)
+
+    processimgtest(img_dir+'/3-1.jpg',
+                   txt_dir+'/3-1.txt',
+                   processdir+'/imgtest/')
 
 
 def Get_files(file_dir, type):
@@ -133,7 +186,7 @@ def visualize(image_root, gt_root, output_root):
             return gt_f.readlines()
 
     def read_image_file(image_name):
-        img_file = image_root+image_name
+        img_file = os.path.join(image_root, image_name)
         img_array = cv2.imread(img_file)
         return img_array
 
@@ -146,23 +199,7 @@ def visualize(image_root, gt_root, output_root):
         gt_list = read_gt_file(image_name)
         for gt in gt_list:
             draw(gt_image_data, gt)
-            cv2.imwrite(output_root + image_name, gt_image_data)
-
-
-root = '/home/guoliangliang/Documents/R-YOLOv4-main/data/'
-processdir=root+'process_workpiece/'
-img_dir = processdir + 'img/'
-xml_dir = processdir + 'xml/'
-txt_dir = processdir + 'txt/'
-out_dir = processdir + 'out/'
-vis_dir = processdir + 'vis/'
-
-datasetdir = root + 'dataset_workpiece/'
-detect_dir = datasetdir + "detect/"
-train_dir = datasetdir + "train/"
-test_dir = datasetdir + "test/"
-val_dir = datasetdir + "val/"
-
+            cv2.imwrite(os.path.join(output_root, image_name), gt_image_data)
 
 def sp_noise(image, prob):
     '''
@@ -221,6 +258,11 @@ def pad_to_square(img, pad_value):
     return img, pad
 
 def processimgtest(imgpath,txtpath,savedir):
+
+    if os.path.exists(savedir):
+        shutil.rmtree(savedir)
+    os.mkdir(savedir)
+
     img = cv2.imread(imgpath, cv2.IMREAD_COLOR)
 
     cv2.imwrite(savedir+'origin.jpg', img)
@@ -242,7 +284,7 @@ def processimgtest(imgpath,txtpath,savedir):
         [[ratio, 0, cx*(1-ratio)], [0, ratio, cy*(1-ratio)]], np.float32)
     kimg = cv2.warpAffine(img, affineM, (imgw, imgh),
                           borderValue=[mB, mG, mR])
-    cv2.imwrite(savedir+'size.jpg', kimg)
+    cv2.imwrite(savedir+'scale.jpg', kimg)
     x1 = int(cx+ratio*(x1-cx))
     x2 = int(cx+ratio*(x2-cx))
     x3 = int(cx+ratio*(x3-cx))
@@ -298,7 +340,7 @@ def processimgtest(imgpath,txtpath,savedir):
     kimg,pad = pad_to_square(kimg,0)
     cv2.imwrite(savedir + 'pad.jpg', kimg)
 
-    cv2.resize(kimg,(416,416),kimg,interpolation=cv2.INTER_LINEAR)
+    kimg = cv2.resize(kimg,(416,416),interpolation=cv2.INTER_LINEAR)
     cv2.imwrite(savedir+'resize.jpg', kimg)
 
 
@@ -311,9 +353,9 @@ def creat(img_dir, txt_dir, targetpath, times, islabel, isgaosi):
         filename = os.path.splitext(ImgFiles[i])[0]
         type = filename.split('-')[0]
         #读取指定img和txt
-        txt = loadtxt(txt_dir + os.path.splitext(ImgFiles[i])[0]+'.txt')
+        txt = loadtxt(os.path.join(txt_dir, os.path.splitext(ImgFiles[i])[0]+'.txt'))
 
-        img = cv2.imread(img_dir + ImgFiles[i], cv2.IMREAD_COLOR)
+        img = cv2.imread(os.path.join(img_dir, ImgFiles[i]), cv2.IMREAD_COLOR)
         imgh, imgw, imgc = img.shape
         mB=np.mean(img[:,:,0])
         mG=np.mean(img[:,:,1])
@@ -409,48 +451,17 @@ def creat(img_dir, txt_dir, targetpath, times, islabel, isgaosi):
             #     print(txt_name)
 
             if islabel:
-                clsdir = targetpath + type
+                clsdir = os.path.join(targetpath, type)
                 if not os.path.exists(clsdir):
                     os.makedirs(clsdir)
-                cv2.imwrite(clsdir+'/' + img_neme,kimg)
-                with open(clsdir+'/' + txt_name, 'w') as wstream:
+                cv2.imwrite(os.path.join(clsdir, img_neme), kimg)
+                with open(os.path.join(clsdir, txt_name), 'w') as wstream:
                     wstream.write(str(x1)+' ' + str(y1) + ' '+str(x2) + ' '+str(y2) + ' '+str(x3) + ' '+str(y3) + ' ' +
                                     str(x4)+' '+str(y4) + ' ' + str(rand_theta)+' '+str(cx)+' ' + str(cy)+' '+str(w)+' '+str(h))
 
             else:
-                cv2.imwrite(targetpath + img_neme,kimg)
+                cv2.imwrite(os.path.join(targetpath, img_neme), kimg)
 
 
 if __name__ == '__main__':
-    if os.path.exists(txt_dir):
-        shutil.rmtree(txt_dir)
-    os.makedirs(txt_dir)
-    xml_to_list(xml_dir, txt_dir)
-
-    if os.path.exists(train_dir):
-        shutil.rmtree(train_dir)
-    os.makedirs(train_dir)
-    creat(img_dir, txt_dir, train_dir, 500,  islabel=True, isgaosi=True)
-
-    if os.path.exists(test_dir):
-        shutil.rmtree(test_dir)
-    os.makedirs(test_dir)
-    creat(img_dir, txt_dir, test_dir, 50,  islabel=True, isgaosi=False)
-    
-    if os.path.exists(val_dir):
-        shutil.rmtree(val_dir)
-    os.makedirs(val_dir)
-    creat(img_dir, txt_dir, val_dir, 20,  islabel=True, isgaosi=False)
-
-    if os.path.exists(detect_dir):
-        shutil.rmtree(detect_dir)
-    os.makedirs(detect_dir)
-    creat(img_dir, txt_dir, detect_dir, 10, islabel=False, isgaosi=False)
-
-    if os.path.exists(vis_dir):
-        shutil.rmtree(vis_dir)
-    os.makedirs(vis_dir)
-    visualize(val_dir + str(1)+'/', val_dir + str(1)+'/', vis_dir)
-    processimgtest(processdir+'img/0-1.jpg',
-                   processdir+'txt/0-1.txt',
-                   processdir+'imgtest/')
+    process()

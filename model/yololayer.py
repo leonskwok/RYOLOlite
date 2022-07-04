@@ -90,7 +90,7 @@ class YoloLossLayer(nn.Module):
             num_target = len(target)
 
             # obj_mask：1表示该位置是物体
-            obj_mask = ByteTensor(nB, nA, nG, nG).fill_(0)
+            # obj_mask = ByteTensor(nB, nA, nG, nG).fill_(0)
             # noobj_mask： 1表示该位置没有物体
             noobj_mask = ByteTensor(nB, nA, nG, nG).fill_(1)
 
@@ -100,6 +100,7 @@ class YoloLossLayer(nn.Module):
             th = FloatTensor(nB, nA, nG, nG).fill_(0)
             tx = FloatTensor(nB, nA, nG, nG).fill_(0)
             ty = FloatTensor(nB, nA, nG, nG).fill_(0)
+            tconf = FloatTensor(nB, nA, nG, nG).fill_(0)
 
             # 转化为特征图直接坐标
             # target_boxes：[nGtBox,(x,y,w,h,a)]
@@ -143,7 +144,9 @@ class YoloLossLayer(nn.Module):
             gi, gj = gxy.long().t()  
 
             # 确定哪些位置上的anchor有物体
-            obj_mask[idx, best_n, gj, gi] = 1
+            # obj_mask[idx, best_n, gj, gi] = 1
+            obj_mask = [idx, best_n, gj, gi]
+
             # 确定哪些位置上的anchor没有物体
             noobj_mask[idx, best_n, gj, gi] = 0
             # 如果某些位置anchor的iou值大于了ignore_thres且角度偏置小
@@ -163,14 +166,18 @@ class YoloLossLayer(nn.Module):
             ty[idx, best_n, gj, gi] = gxy[:, 1] - gj
             # 真实类别
             tcls[idx, best_n, gj, gi, target_labels] = 1
+
             # 真实置信度
-            tconf = obj_mask.float()
+            # tconf = obj_mask.float()
+            tconf[obj_mask] = 1.0
 
             with torch.no_grad():
                 bbox_loss_scale = 2.0 - 1.0 * gwh[:, 0] * gwh[:, 1] / (nG ** 2)
          
-            obj_mask = obj_mask.type(torch.bool)
+            # obj_mask = obj_mask.type(torch.bool)
+
             noobj_mask = noobj_mask.type(torch.bool)
+
 
             # 这里pred_boxes和target_boxes都是特征图上的直接坐标
             iou, anchors_skewiou, giou, ciou = bbox_iou(pred_boxes[obj_mask], scaled_target,True)

@@ -89,7 +89,7 @@ def preprocess_input(image):
     image /= 255.0
     return image
 
-def fit_one_epoch(model_train, model, yolo_layer, loss_history, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, Epoch, cuda, weights_folder):
+def fit_one_epoch(model_train, model, yolo_layer, loss_history, optimizer, epoch, epoch_step, epoch_step_val, gen, gen_val, Epoch, cuda, weights_folder, val):
     train_loss = 0
     val_loss = 0
 
@@ -137,34 +137,35 @@ def fit_one_epoch(model_train, model, yolo_layer, loss_history, optimizer, epoch
 
     print('Finish Train')
 
-    model_train.eval()
-    print('Start Validation')
-    with tqdm(total=epoch_step_val, desc=f'Epoch {epoch + 1}/{Epoch}', postfix=dict, mininterval=0.3) as pbar:
-        for iteration, batch in enumerate(gen_val):
-            if iteration >= epoch_step_val:
-                break
-            images, targets = batch[0], batch[1]
-            with torch.no_grad():
-                device='cuda' if cuda else 'cpu'
-                images = Variable(images.to(device), requires_grad=True)
-                targets = Variable(targets.to(device), requires_grad=False)
+    if val:
+        model_train.eval()
+        print('Start Validation')
+        with tqdm(total=epoch_step_val, desc=f'Epoch {epoch + 1}/{Epoch}', postfix=dict, mininterval=0.3) as pbar:
+            for iteration, batch in enumerate(gen_val):
+                if iteration >= epoch_step_val:
+                    break
+                images, targets = batch[0], batch[1]
+                with torch.no_grad():
+                    device='cuda' if cuda else 'cpu'
+                    images = Variable(images.to(device), requires_grad=True)
+                    targets = Variable(targets.to(device), requires_grad=False)
 
-                optimizer.zero_grad()
-                outputs = model_train(images)
+                    optimizer.zero_grad()
+                    outputs = model_train(images)
 
-                loss_all = 0
+                    loss_all = 0
 
-                for l in range(len(outputs)):
-                    loss, loss_loc, loss_conf, loss_cls = yolo_layer(l, outputs[l], targets)
-                    loss_all += loss
+                    for l in range(len(outputs)):
+                        loss, loss_loc, loss_conf, loss_cls = yolo_layer(l, outputs[l], targets)
+                        loss_all += loss
 
-                loss_history.append_valloss(loss_all.item())
+                    loss_history.append_valloss(loss_all.item())
 
-            val_loss += loss_all.item()
-            pbar.set_postfix(**{'val_loss': loss_all.item()})
-            pbar.update(1)
+                val_loss += loss_all.item()
+                pbar.set_postfix(**{'val_loss': loss_all.item()})
+                pbar.update(1)
 
-    print('Finish Validation')
+        print('Finish Validation')
 
     print('Epoch:' + str(epoch+1) + '/' + str(Epoch))
     print('Total Loss: %.3f || Val Loss: %.3f ' %

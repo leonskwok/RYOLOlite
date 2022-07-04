@@ -11,23 +11,25 @@ import os
 
 
 def loss_plot(dirpath):
+    trainloss_path = os.path.join(dirpath, "loss.txt")
+    if os.path.exists(trainloss_path):
+        trainloss = np.loadtxt(trainloss_path)[:, 0]
+        plt.figure()
+        plt.plot(trainloss, color="black", linestyle='-', linewidth=2)
+        plt.grid(True)
+        plt.xlabel('Iteration')
+        plt.ylabel('Loss')
+        plt.savefig(os.path.join(dirpath, "loss.jpg"))
 
-    trainloss = np.loadtxt(os.path.join(dirpath,"loss.txt"))[:, 0]
-    valloss = np.loadtxt(os.path.join(dirpath, "val_loss.txt"))
-
-    plt.figure()
-    plt.plot(trainloss, color="black", linestyle='-', linewidth=2)
-    plt.grid(True)
-    plt.xlabel('Iteration')
-    plt.ylabel('Loss')
-    plt.savefig(os.path.join(dirpath,"loss.jpg"))
-
-    plt.figure()
-    plt.plot(valloss, color="black", linestyle='-', linewidth=2)
-    plt.grid(True)
-    plt.xlabel('Iteration')
-    plt.ylabel('Loss')
-    plt.savefig(os.path.join(dirpath, "val_loss.jpg"))
+    valloss_path = os.path.join(dirpath, "val_loss.txt")
+    if os.path.exists(valloss_path):
+        valloss = np.loadtxt(valloss_path)
+        plt.figure()
+        plt.plot(valloss, color="black", linestyle='-', linewidth=2)
+        plt.grid(True)
+        plt.xlabel('Iteration')
+        plt.ylabel('Loss')
+        plt.savefig(os.path.join(dirpath, "val_loss.jpg"))
 
 class FocalLoss(nn.Module):
     # Reference: https://github.com/ultralytics/yolov5/blob/8918e6347683e0f2a8a3d7ef93331001985f6560/utils/loss.py#L32

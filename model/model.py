@@ -90,41 +90,6 @@ class RTiny(nn.Module):
 
 
 
-
-# RMobileYOLOv4
-class RYOLOv3_M(nn.Module):
-    def __init__(self, out_chs):
-        super(RYOLOv3_M, self).__init__()
-        self.tiny = False
-        self.backbone = MobileNet("leaky")
-        self.neck = Neck_PanNet([256, 512, 1024], [128, 256, 512], 'leaky')
-        self.head = Headv4([128, 256, 512], [out_chs, out_chs, out_chs], "leaky")
-
-    def forward(self, x):
-        feat1, feat2, feat3 = self.backbone(x)
-        feat1, feat2, feat3 = self.neck(feat1, feat2, feat3)
-        out1, out2, out3 = self.head(feat1, feat2, feat3)
-        return out1, out2, out3
-    
-
-                
-# RGhostYOLOv4
-class RYOLOv3_G(nn.Module):
-    def __init__(self, out_chs):
-        super(RYOLOv3_G, self).__init__()
-        self.tiny = False
-        self.backbone = GhostNet("leaky")
-        self.neck = Neck_PanNet([40, 112, 160], [128, 256, 512], 'leaky')
-        self.head = Headv4([128, 256, 512], [
-                           out_chs, out_chs, out_chs], "leaky")
-
-    def forward(self, x):
-        feat1, feat2, feat3 = self.backbone(x)
-        feat1, feat2, feat3 = self.neck(feat1, feat2, feat3)
-        out1, out2, out3 = self.head(feat1, feat2, feat3)
-        return out1, out2, out3
-
-
 # RYOLO-v4
 class RYOLOv4(nn.Module):
     def __init__(self, out_chs):
@@ -148,6 +113,54 @@ class RYOLOv3(nn.Module):
         self.backbone = Darknet53('leaky')  # 52*52*256, 26*26*512, 13*13*1024
         self.neck = Neck_FPN([256, 512, 1024], [128, 256, 512], 'leaky')
         self.head = Headv3([128, 256, 512], [out_chs, out_chs, out_chs], "leaky")
+
+    def forward(self, x):
+        feat1, feat2, feat3 = self.backbone(x)
+        feat1, feat2, feat3 = self.neck(feat1, feat2, feat3)
+        out1, out2, out3 = self.head(feat1, feat2, feat3)
+        return out1, out2, out3
+
+
+class RYOLOv3_M(nn.Module):
+    def __init__(self, out_chs):
+        super(RYOLOv3_M, self).__init__()
+        self.tiny = False
+        self.backbone = MobileNet("leaky")
+        self.neck = Neck_FPN([256, 512, 1024], [128, 256, 512], 'leaky')
+        self.head = Headv3([128, 256, 512], [
+                           out_chs, out_chs, out_chs], "leaky")
+
+    def forward(self, x):
+        feat1, feat2, feat3 = self.backbone(x)
+        feat1, feat2, feat3 = self.neck(feat1, feat2, feat3)
+        out1, out2, out3 = self.head(feat1, feat2, feat3)
+        return out1, out2, out3
+
+
+class RYOLOv3_G(nn.Module):
+    def __init__(self, out_chs):
+        super(RYOLOv3_G, self).__init__()
+        self.tiny = False
+        self.backbone = GhostNet("leaky")
+        self.neck = Neck_FPN([40, 112, 160], [128, 256, 512], 'leaky')
+        self.head = Headv3([128, 256, 512], [
+                           out_chs, out_chs, out_chs], "leaky")
+
+    def forward(self, x):
+        feat1, feat2, feat3 = self.backbone(x)
+        feat1, feat2, feat3 = self.neck(feat1, feat2, feat3)
+        out1, out2, out3 = self.head(feat1, feat2, feat3)
+        return out1, out2, out3
+
+
+class RYOLOv3_SG(nn.Module):
+    def __init__(self, out_chs):
+        super(RYOLOv3_SG, self).__init__()
+        self.tiny = False
+        self.backbone = GhostNet("leaky")
+        self.neck = Neck_FPN([40, 112, 160], [128, 256, 512], 'leaky')
+        self.head = Headv3([128, 256, 512], [
+                           out_chs, out_chs, out_chs], "leaky")
 
     def forward(self, x):
         feat1, feat2, feat3 = self.backbone(x)

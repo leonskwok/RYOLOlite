@@ -43,6 +43,10 @@ def detect():
                 shutil.copy(file, os.path.join(target_folder, fname))
     else:
         target_folder = cfg.detect_folder
+    
+    # target_folder = "/home/guoliangliang/Documents/R-YOLOv4-New/data/process_5workpiece/img"
+    # target_folder ="others/imgs"
+    target_folder = "others/plane"
 
     FloatTensor = torch.cuda.FloatTensor if cfg.CUDA else torch.FloatTensor
     device = "cuda" if cfg.CUDA else "cpu"

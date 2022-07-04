@@ -54,7 +54,7 @@ def plot_boxes(img_path, boxes, class_names, img_size, output_folder, color=None
             X1, Y1, X2, Y2, X3, Y3, X4, Y4 = int(X1), int(Y1), int(X2), int(Y2), int(X3), int(Y3), int(X4), int(Y4)
 
             bbox = np.int0([(X1, Y1), (X2, Y2), (X3, Y3), (X4, Y4)])
-            cv.drawContours(img, [bbox], 0, (0, 255, 0), 2)
+            cv.drawContours(img, [bbox], 0, (0, 0, 255), 5)
 
             if color:
                 rgb = color
@@ -70,8 +70,10 @@ def plot_boxes(img_path, boxes, class_names, img_size, output_folder, color=None
             if color is None:
                 rgb = (red, green, blue)
 
-            img = cv.putText(img, class_names[cls_id] + ":" + str(round(box[5] * box[6], 2)),
-                            (X1, Y1), cv.FONT_HERSHEY_SIMPLEX, 0.6, rgb, 1)
+            # img = cv.putText(img, class_names[cls_id] + ":" + str(round(box[5] * box[6], 2)),
+            #                 (X1, Y1), cv.FONT_HERSHEY_SIMPLEX, 2, rgb, 3)
+            img = cv.putText(img, "Type"+ str(cls_id+1) + ":" + str(round(box[5] * box[6], 2)),
+                                 (X1, Y1), cv.FONT_HERSHEY_SIMPLEX, 2, rgb, 3)
 
     output_path = str(output_folder) + "/" + img_path.split('/')[-1]
     cv.imwrite(output_path, img)

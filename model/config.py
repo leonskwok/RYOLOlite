@@ -5,7 +5,8 @@ from tools.plot import load_class_names
 
 class config():
     def __init__(self):
-        datasetdir = 'data/dataset_5workpiece/'
+        # datasetdir = 'data/dataset_5workpiece'
+        datasetdir = 'data/dataset_UCAS_AOD'
         self.train_folder = os.path.join(datasetdir, "train")
         self.test_folder = os.path.join(datasetdir, "test")
         self.val_folder = os.path.join(datasetdir, "val")
@@ -28,23 +29,30 @@ class config():
         # self.reg_type = "ciou_l1"
         self.reg_type = "const_factor"
 
-        # self.model = RTiny(outchs)#标准卷积
-        self.model = RTiny_G(outchs)#Ghost卷积
+        # self.model = RTiny(outchs)#标准卷积   
         # self.model = RTiny_D(outchs)#深度可分离卷积
+        # self.model = RTiny_G(outchs)#Ghost卷积
         # self.model = RTiny_SG(outchs)  #可分离幻影卷积
+
+        self.model = RYOLOv3_M(outchs)
+        # self.model = RYOLOv3_G(outchs)
 
         # self.model = RYOLOv4(outchs)
         # self.model = RYOLOv3(outchs)
-        # self.model = RYOLOv3_M(outchs)
-        # self.model = RYOLOv3_G(outchs)
 
         self.lr = 0.001
-        self.img_size = 416
+        self.img_size = 608
      
+        # self.start_epoch = 0
+        # self.end_epoch = 60
+        # self.trainbatchsize = 64
+        # self.valbatchsize = 16
+        # self.testbatchsize = 1
+        
         self.start_epoch = 0
-        self.end_epoch = 60
-        self.trainbatchsize = 64
-        self.valbatchsize = 16
+        self.end_epoch = 80
+        self.trainbatchsize = 16
+        self.valbatchsize = 1
         self.testbatchsize = 1
 
         self.conf_thres=0.7
@@ -61,7 +69,7 @@ class config():
         self.log_folder = self.weights_folder
 
         self.trainedmodel=''
-        self.weights_path = 'weights/RYOLOv3_M_l1_06-27_09:15/ep060-loss0.014-val_loss3.056.pth'
+        self.weights_path = 'weights/RYOLOv3_M_l1_07-01_14:43/ep080-loss0.018-val_loss0.000.pth'
         self.CUDA = True
         self.GPU = '1,2,3'
 
@@ -71,8 +79,9 @@ class config():
             self.anchor_mask = [[0, 1, 2], [3, 4, 5]]
 
         else:
-            self.anchor = [[10, 13], [16, 30], [23, 33], [30, 61], [
-                45, 62], [59, 119], [90, 116], [156, 198], [326, 373]]
+            self.anchor = [[10, 13], [16, 30], [23, 33], 
+                            [30, 61], [45, 62], [59, 119], 
+                            [90, 116], [156, 198], [326, 373]]
             self.anchor_mask = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
 
         self.yolo_layer = YoloLossLayer(self.ncls, self.anchor, self.angles,

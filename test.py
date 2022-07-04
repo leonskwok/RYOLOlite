@@ -19,6 +19,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = cfg.GPU
 def test():
     model = cfg.model
     test_folder = cfg.test_folder
+    # test_folder ="testdir"
     weights_path = cfg.weights_path
     conf_thres = cfg.conf_thres
     nms_thres = cfg.nms_thres
@@ -71,6 +72,9 @@ def test():
 
     print("Compute mAP...")
     averageAP = []
+    averageP=[]
+    averageR=[]
+    averageF=[]
     # IoU阈值
     IoUthre = list(range(50, 100, 5))
 
@@ -131,7 +135,7 @@ def test():
             for j, c in enumerate(ap_class):
                 f.writelines(
                     f"+ Class '{c}' ({class_names[c]}) - AP: {AP[j]}\n")
-            f.writelines(f"mAP: {AP.mean()}\n")
+            f.writelines(f"mAP: {AP.mean()}\tprecision:{precision.mean()}\trecall:{recall.mean()}\tf1:{f1.mean()}\n")
             f.writelines('\n\n\n')
 
         # Ang.txt, Catch.txt
@@ -142,6 +146,9 @@ def test():
         np.savetxt(os.path.join(Statdir, 'AP%d.txt' %
                 (IoUthre[i])),  torch.Tensor(recdata[i]).numpy())
         averageAP.append(AP.mean())
+        averageP.append(precision.mean())
+        averageR.append(recall.mean())
+        averageF.append(f1.mean())
 
         # hardsample.txt
         with open(os.path.join(Statdir, 'Hard%d.txt' % (IoUthre[i])), 'a+', encoding='utf-8') as f:
@@ -149,7 +156,11 @@ def test():
                 f.writelines(path+'\t%0.2f\n' % (da))
 
     with open(APfile, 'a+') as f:
-        f.writelines(f"averageAP: {np.array(averageAP).mean()}")
+        f.writelines(f"averageAP: {np.array(averageAP).mean()}\n")
+        f.writelines(f"averagePrecision: {np.array(averageP).mean()}\n")
+        f.writelines(f"averageRecall: {np.array(averageR).mean()}\n")
+        f.writelines(f"averageF1: {np.array(averageF).mean()}\n")
+
     print(f"averageAP: {np.array(averageAP).mean()}")
 
 
